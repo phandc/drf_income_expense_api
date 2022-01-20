@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'authentication',
     'expenses',
     'income',
+    'userstats',
    
 ]
 
