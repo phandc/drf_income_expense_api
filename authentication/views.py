@@ -80,6 +80,10 @@ class VerifyEmail(views.APIView):
         except jwt.DecodeError :
             return Response({'erorr': 'Invalid Token'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+
+
 class LoginAPIView(generics.GenericAPIView):
 
     serializer_class = LoginSerializer
@@ -90,7 +94,7 @@ class LoginAPIView(generics.GenericAPIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
             
-
+#important skill here is token encoding and decoding
 class RequestPasswordResetEmail(generics.GenericAPIView):
 
     serializer_class = ResetPasswordEmailRequestSerializer
@@ -119,6 +123,9 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
 
 
 class PasswordTokenCheckAPIView(generics.GenericAPIView):
+    
+    serializer_class = ResetPasswordEmailRequestSerializer
+
     def get(self, request, uidb64, token):
 
         try:
