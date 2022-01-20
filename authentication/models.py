@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from rest_framework_simplejwt.tokens import RefreshToken
 
 #Custom usermodel
-#use email for login?
+#use email for username
 
 class UserManager(BaseUserManager):
 

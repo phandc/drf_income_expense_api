@@ -1,16 +1,18 @@
+from dataclasses import field
+from turtle import pd
 from unittest import TextTestRunner
 from django.template import exceptions
 from rest_framework import serializers
 from .models import User
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed
+
+
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
-
-from .utils import Util
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=100, min_length=6, write_only=True)
@@ -76,27 +78,35 @@ class ResetPasswordEmailRequestSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email']
     
+
+class SetNewPasswordSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(min_length=6, max_length=68, write_only=True)
+    token = serializers.CharField(min_length=1, write_only=True)
+    uidb64 = serializers.CharField(min_length=1, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['password','token', 'uidb64']
+
+
     def validate(self, attrs):
-            import pdb
-            pdb.set_trace()
-            print("Attrs ", attrs)
-            email = attrs['data'].get('email', '')
-            if User.objects.filter(email=email).exists():
-                user=User.objects.get(email=email)
-                uidb64 = urlsafe_base64_encode(user.id) 
-                token = PasswordResetTokenGenerator().make_token(user)
-                current_site = get_current_site(request=attrs['data'].get('request')).domain
+        try:
+            password = attrs.get('password') 
+            token = attrs.get('token') 
+            uidb64 = attrs.get('uidb64') 
 
-                relative_link = reverse('password-reset-confirm', kwargs={'uidb64':uidb64, 'token':token})
+            id = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=id)
+            # import pdb
+            # pdb.set_trace
+            if not PasswordResetTokenGenerator().check_token(user, token):
+               raise AuthenticationFailed('The reset link 1 is invalid!',401) #in view we return Response, in here we raise the error
 
-                absoluteURL = 'http://' + current_site + relative_link
-                email_body = "Hello, " + user.username + "\n" + "Use this link below to reset your password\n" + absoluteURL
-                data = {
-                   "to_email": user.email,
-                   "email_body": email_body,
-                   "email_subject": "Reset your password"
-                }
+            user.set_password(password)
+            user.save()
 
-                Util.send_email(data)
+            return (user)
 
-            return super().validate(attrs)
+        except:
+            raise AuthenticationFailed('The reset link is invalid!',401)
+        return super().validate(attrs)
